@@ -11,6 +11,12 @@
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
+  <!-- ✅ Leaflet CSS -->
+  <link 
+    rel="stylesheet" 
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -76,7 +82,7 @@
         </div>
       </div>
 
-      <!-- 📊 NEW: Score Breakdown -->
+      <!-- Score Breakdown -->
       <div class="card breakdown-card">
         <h3>📊 Score Breakdown</h3>
 
@@ -111,10 +117,21 @@
         <p id="adviceText"></p>
       </div>
 
+      <!-- ✅ MAP CARD -->
+      <div class="card">
+        <h3>🗺 Location Overview</h3>
+        <div id="map" style="height: 400px; margin-top: 10px;"></div>
+      </div>
+
     </section>
 
   </div>
 
+  <!-- ✅ Leaflet JS (must come before script.js) -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Your Script -->
   <script src="script.js"></script>
+
 </body>
 </html>

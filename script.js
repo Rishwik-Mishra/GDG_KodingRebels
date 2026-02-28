@@ -1,7 +1,54 @@
 // ===== CONFIG =====
-const OPENWEATHER_API_KEY = "YOUR_API_KEY_HERE";
+const OPENWEATHER_API_KEY = "YOUR_API_KEY_HERE"; // Replace with your OpenWeatherMap API key
 
-// ===== GEOLOCATION (India fallback) =====
+// ===== LEAFLET MAP =====
+let map;
+let currentMarker = null;
+
+function initMap() {
+  map = L.map("map").setView([20, 0], 2);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap contributors"
+  }).addTo(map);
+}
+
+function updateMap(lat, lon, countryName, temp, weather, score) {
+
+  lat = Number(lat);
+  lon = Number(lon);
+
+  if (!map || isNaN(lat) || isNaN(lon)) {
+    console.error("Invalid coordinates:", lat, lon);
+    return;
+  }
+
+  if (currentMarker) {
+    map.removeLayer(currentMarker);
+  }
+
+  map.flyTo([lat, lon], 6, { duration: 1.5 });
+
+  let color = "red";
+  if (score >= 75) color = "green";
+  else if (score >= 50) color = "orange";
+
+  currentMarker = L.circleMarker([lat, lon], {
+    radius: 10,
+    color: color,
+    fillColor: color,
+    fillOpacity: 0.8
+  }).addTo(map);
+
+  currentMarker.bindPopup(`
+    <b>${countryName}</b><br/>
+    🌡 Temp: ${temp}°C<br/>
+    🌤 Weather: ${weather}<br/>
+    🧭 Travel Score: ${score}
+  `).openPopup();
+}
+
+// ===== GEOLOCATION =====
 let userLat = 20.5937;
 let userLon = 78.9629;
 
@@ -9,10 +56,9 @@ navigator.geolocation.getCurrentPosition(
   (position) => {
     userLat = position.coords.latitude;
     userLon = position.coords.longitude;
-    console.log("User location detected:", userLat, userLon);
   },
   () => {
-    console.log("Location denied. Using India fallback.");
+    console.log("Using India fallback location.");
   }
 );
 
@@ -24,7 +70,7 @@ const loading = document.getElementById("loading");
 const results = document.getElementById("results");
 
 const flag = document.getElementById("flag");
-const countryName = document.getElementById("countryName");
+const countryNameEl = document.getElementById("countryName");
 const capitalEl = document.getElementById("capital");
 const populationEl = document.getElementById("population");
 const regionEl = document.getElementById("region");
@@ -38,7 +84,6 @@ const ecoScoreEl = document.getElementById("ecoScore");
 const adviceText = document.getElementById("adviceText");
 const scoreCircle = document.querySelector(".score-circle");
 
-// Breakdown elements
 const weatherBar = document.getElementById("weatherBar");
 const ecoBar = document.getElementById("ecoBar");
 const costBar = document.getElementById("costBar");
@@ -51,14 +96,14 @@ const costScoreText = document.getElementById("costScore");
 window.addEventListener("DOMContentLoaded", async () => {
   try {
     const res = await fetch(
-      "https://restcountries.com/v3.1/all?fields=name,capital,capitalInfo,flags,population,region"
+      "https://restcountries.com/v3.1/all?fields=name,capital,latlng,flags,population,region"
     );
     const data = await res.json();
 
     data
       .sort((a, b) => a.name.common.localeCompare(b.name.common))
       .forEach(country => {
-        if (!country.capitalInfo?.latlng) return;
+        if (!country.latlng) return;
 
         const option = document.createElement("option");
         option.value = country.name.common;
@@ -80,32 +125,37 @@ searchBtn.addEventListener("click", async () => {
   loading.classList.remove("hidden");
 
   try {
-    // 1️⃣ Fetch Country
+    // Fetch country with latlng
     const countryRes = await fetch(
-      `https://restcountries.com/v3.1/name/${selectedCountry}?fields=name,capital,capitalInfo,flags,population,region`
+      `https://restcountries.com/v3.1/name/${selectedCountry}?fullText=true&fields=name,capital,latlng,flags,population,region`
     );
+
     const countryData = await countryRes.json();
     const country = countryData[0];
 
-    const capital = country.capital?.[0];
-    const lat = country.capitalInfo?.latlng?.[0];
-    const lon = country.capitalInfo?.latlng?.[1];
+    if (!country || !country.latlng) {
+      throw new Error("Invalid country data.");
+    }
 
-    // Populate country info
+    const lat = country.latlng[0];
+    const lon = country.latlng[1];
+
+    // Populate UI
     flag.src = country.flags.png;
-    countryName.textContent = country.name.common;
-    capitalEl.textContent = capital;
+    countryNameEl.textContent = country.name.common;
+    capitalEl.textContent = country.capital?.[0] || "N/A";
     populationEl.textContent = country.population.toLocaleString();
     regionEl.textContent = country.region;
 
-    // 2️⃣ Fetch Weather
+    // Fetch weather
     const weatherRes = await fetch(
       `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${OPENWEATHER_API_KEY}`
     );
+
     const weatherData = await weatherRes.json();
 
-    if (weatherData.cod !== 200) {
-      throw new Error(weatherData.message);
+    if (!weatherData.main || weatherData.cod !== 200) {
+      throw new Error("Weather API failed.");
     }
 
     const temp = weatherData.main.temp;
@@ -118,20 +168,20 @@ searchBtn.addEventListener("click", async () => {
     humidityEl.textContent = humidity;
     windEl.textContent = wind;
 
-    // ===== WEATHER SCORE (40) =====
+    // WEATHER SCORE
     let weatherScore = 40;
     if (temp < 10 || temp > 35) weatherScore -= 15;
     if (humidity > 85) weatherScore -= 5;
     if (wind > 12) weatherScore -= 5;
 
-    // ===== ECO DISTANCE SCORE (30) =====
+    // ECO DISTANCE SCORE
     const distance = calculateDistance(userLat, userLon, lat, lon);
 
     let ecoScore = 30;
     if (distance > 8000) ecoScore = 10;
     else if (distance > 4000) ecoScore = 20;
 
-    // ===== COST SCORE (30) =====
+    // COST SCORE
     let costScore = 30;
     if (country.region === "Europe") costScore = 20;
     if (country.region === "Americas") costScore = 15;
@@ -140,10 +190,20 @@ searchBtn.addEventListener("click", async () => {
     const totalScore = weatherScore + ecoScore + costScore;
 
     updateUI(totalScore, weatherScore, ecoScore, costScore);
-    adviceText.textContent = generateAdvice(totalScore, temp, distance);
+    adviceText.textContent = generateAdvice(totalScore);
 
     loading.classList.add("hidden");
     results.classList.remove("hidden");
+
+    // 🔥 Initialize map AFTER results visible
+    if (!map) {
+      initMap();
+    }
+
+    setTimeout(() => {
+      map.invalidateSize();
+      updateMap(lat, lon, selectedCountry, temp, description, totalScore);
+    }, 200);
 
   } catch (error) {
     console.error("Error:", error);
@@ -152,7 +212,7 @@ searchBtn.addEventListener("click", async () => {
   }
 });
 
-// ===== DISTANCE (Haversine) =====
+// ===== DISTANCE =====
 function calculateDistance(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = toRad(lat2 - lat1);
@@ -184,8 +244,8 @@ function updateUI(total, weather, eco, cost) {
   costScoreText.textContent = `${cost}/30`;
 }
 
-// ===== ADVICE GENERATOR =====
-function generateAdvice(score, temp, distance) {
+// ===== ADVICE =====
+function generateAdvice(score) {
   if (score > 80)
     return "🌿 Excellent time to visit! Conditions are ideal.";
   if (score > 60)
