@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EcoTravel Advisor</title>
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- Header -->
+    <header>
+      <h1>🌿 EcoTravel Decision Assistant</h1>
+      <p>Smart & Sustainable Travel Intelligence</p>
+    </header>
+
+    <!-- Country Selector -->
+    <section class="search-section">
+      <select id="countrySelect">
+        <option value="">Select a Country</option>
+      </select>
+      <button id="searchBtn">
+        <i class="fas fa-search"></i> Analyze
+      </button>
+    </section>
+
+    <!-- Loading Spinner -->
+    <div id="loading" class="hidden">
+      <div class="spinner"></div>
+      <p>Analyzing travel conditions...</p>
+    </div>
+
+    <!-- Results Section -->
+    <section id="results" class="hidden">
+
+      <!-- Country Info -->
+      <div class="card country-card">
+        <img id="flag" src="" alt="Flag">
+        <div>
+          <h2 id="countryName"></h2>
+          <p><strong>Capital:</strong> <span id="capital"></span></p>
+          <p><strong>Population:</strong> <span id="population"></span></p>
+          <p><strong>Region:</strong> <span id="region"></span></p>
+        </div>
+      </div>
+
+      <!-- Weather Info -->
+      <div class="card weather-card">
+        <h3>🌤 Current Weather</h3>
+        <div class="weather-grid">
+          <div>
+            <p class="temp" id="temperature"></p>
+            <p id="description"></p>
+          </div>
+          <div>
+            <p><i class="fas fa-tint"></i> Humidity: <span id="humidity"></span>%</p>
+            <p><i class="fas fa-wind"></i> Wind: <span id="wind"></span> m/s</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Travel Decision Score -->
+      <div class="card eco-score-card">
+        <h3>🌍 Travel Decision Score</h3>
+        <div class="score-circle">
+          <span id="ecoScore">0</span>
+        </div>
+      </div>
+
+      <!-- 📊 NEW: Score Breakdown -->
+      <div class="card breakdown-card">
+        <h3>📊 Score Breakdown</h3>
+
+        <div class="score-row">
+          <span>Weather</span>
+          <div class="progress">
+            <div id="weatherBar"></div>
+          </div>
+          <span id="weatherScore"></span>
+        </div>
+
+        <div class="score-row">
+          <span>Eco Impact</span>
+          <div class="progress">
+            <div id="ecoBar"></div>
+          </div>
+          <span id="ecoDistanceScore"></span>
+        </div>
+
+        <div class="score-row">
+          <span>Cost</span>
+          <div class="progress">
+            <div id="costBar"></div>
+          </div>
+          <span id="costScore"></span>
+        </div>
+      </div>
+
+      <!-- Advice Panel -->
+      <div class="card advice-card">
+        <h3>💡 Travel Recommendation</h3>
+        <p id="adviceText"></p>
+      </div>
+
+    </section>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
